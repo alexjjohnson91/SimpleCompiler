@@ -13,6 +13,7 @@
 "return"                { return TOK_RETURN; }
 "int"                   { yylval.string=strdup(yytext); return TOK_TYPE; }
 "main"                  { return TOK_IDENTIFIER; }
+"cout"                  { return TOK_COUT; }
 "{"                     { return TOK_LBRACE; }
 "}"                     { return TOK_RBRACE; }
 "("                     { return TOK_LPAREN; }
@@ -24,6 +25,7 @@
 "!"                     { return TOK_NEG; }
 ";"                     { return TOK_SEMI; }
 "="                     { return TOK_EQUALS; }
+"<"                     { return TOK_LBRACKET; }
 [0-9]+                  { yylval.number=atoi(yytext); return TOK_UINT; }
 [a-zA-Z_]+              { yylval.string=strdup(yytext); return TOK_IDENTIFIER; }
 
