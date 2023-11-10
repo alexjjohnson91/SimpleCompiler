@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 
 
 
-%token TOK_LBRACE
+%token TOK_LBRACE TOK_COUT TOK_LBRACKET
 %token TOK_RBRACE TOK_RETURN TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_NEG
 %token TOK_LPAREN TOK_RPAREN TOK_SEMI TOK_LETTER TOK_EQUALS
 
@@ -143,6 +143,14 @@ stmt_list:
     stmt_list stmt
     ;
 expr:
+    TOK_COUT TOK_LBRACKET TOK_LBRACKET expr TOK_SEMI
+    {
+        ParseTree *rint = parserStackPop(parserStack);
+        parserStackPush(parserStack, print(rint));
+        symbolTableProxy++;
+
+    }
+    |
     value TOK_ADD expr
     {
         ParseTree *lint = parserStackPop(parserStack);

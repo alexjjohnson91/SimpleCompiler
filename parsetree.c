@@ -7,7 +7,7 @@ typedef enum { INT, STRING, BINOP, UNOP } ParseTreeType;
 typedef enum { ADDITION, SUBTRACTION, MULTIPLICATION, DIVIDE } ParseTreeBinOp;
 
 // new enum for Unary operator
-typedef enum { NEGATION, ASSIGN } ParseTreeUnOp;
+typedef enum { NEGATION, ASSIGN, PRINT } ParseTreeUnOp;
 // new enum end
 
 typedef struct parseTree ParseTree;
@@ -108,6 +108,16 @@ ParseTree *assign(ParseTree *rint) {
     ParseTree *parseTree = malloc(sizeof(parseTree));
     UnOpExpr *unOpExpr = malloc(sizeof(unOpExpr));
     unOpExpr->UnOpType = ASSIGN;
+    unOpExpr->rint = rint;
+    parseTree->type = UNOP;
+    parseTree->unExpr = unOpExpr;
+    return parseTree;
+}
+
+ParseTree *print(ParseTree *rint) {
+    ParseTree *parseTree = malloc(sizeof(parseTree));
+    UnOpExpr *unOpExpr = malloc(sizeof(unOpExpr));
+    unOpExpr->UnOpType = PRINT;
     unOpExpr->rint = rint;
     parseTree->type = UNOP;
     parseTree->unExpr = unOpExpr;
