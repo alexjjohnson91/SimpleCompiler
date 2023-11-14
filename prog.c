@@ -1,5 +1,5 @@
 int main() {
-    int x = 4;
-    int y = 2;
-    return x*y;
+    int x=12;
+    int y=14;
+    cout << y*x;
 }

@@ -25,7 +25,7 @@
 "!"                     { return TOK_NEG; }
 ";"                     { return TOK_SEMI; }
 "="                     { return TOK_EQUALS; }
-"<"                     { return TOK_LBRACKET; }
+"<<"                    { return TOK_STREAMOUTPUT; }
 [0-9]+                  { yylval.number=atoi(yytext); return TOK_UINT; }
 [a-zA-Z_]+              { yylval.string=strdup(yytext); return TOK_IDENTIFIER; }
 

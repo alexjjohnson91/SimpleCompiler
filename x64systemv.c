@@ -32,6 +32,7 @@ void funcCode(FILE *prog, ParseTree *parseTree, char symbolName[50][20], char sy
   if (parseTree->type == INT) {
     printf("x64systemv.c intValue: %d\n", parseTree->constantValue);
     fprintf(prog, "\tmov edi, %d\n", parseTree->constantValue);
+    fprintf(prog, "\tmov eax, edi\n");
   } 
   // add string clause to handle string types
   else if (parseTree->type == STRING) {
@@ -122,7 +123,7 @@ void funcCode(FILE *prog, ParseTree *parseTree, char symbolName[50][20], char sy
       fprintf(prog, "\tmov [rbp-%d], rax\n", (stackDepth * 12) - 4); // save the answer in the stack
 
     } 
-    if (unOpExpr->UnOpType == ASSIGN) {
+    else if (unOpExpr->UnOpType == ASSIGN) {
       // then we have to create a variable in assembly
       // first: set up the label in assembly
       funcCode(prog, unOpExpr->rint, symbolName, symbolType, symbolLocation, stackDepth, symbolTableIndex);
@@ -133,5 +134,40 @@ void funcCode(FILE *prog, ParseTree *parseTree, char symbolName[50][20], char sy
       printf("x64systemv: stack depth %d\n", stackDepth);
       funcCodeSymbolIndex++;
     }
+    else if (unOpExpr->UnOpType == PRINT) {
+      printf("x64systemv.c: print called\n");
+
+      funcCode(prog, unOpExpr->rint, symbolName, symbolType, symbolLocation, stackDepth, symbolTableIndex);
+      fprintf(prog, "printing:\n");
+
+      fprintf(prog, "\tmov rcx, 10\t; set the divisor to 10\n");
+      fprintf(prog, "\txor rbx, rbx\t; clear rbx to use as counter\n");
+
+      // setup the divide loop
+      fprintf(prog, "divide_loop:\n");
+      fprintf(prog, "\txor rdx, rdx\t; clear remainder\n");
+      fprintf(prog, "\tdiv rcx\t\t; divide rax by 10, remainder in rdx\n");
+      fprintf(prog, "\tadd rdx, '0'\t; convert integer to ascii\n");
+      fprintf(prog, "\tpush rdx\t; push the remainder to the stack\n");
+      fprintf(prog, "\tinc rbx\t\t; increment the number of pushes to the stack\n\n");
+      fprintf(prog, "\tcmp rax, 0\t; check to make sure quotient is not 0\n");
+      fprintf(prog, "\tjne divide_loop\t; if != 0, continue loop\n");
+
+      // setup the print result loop
+      fprintf(prog, "print_result:\n");
+      fprintf(prog, "; prepare the registers for syswrite\n");
+      fprintf(prog, "\tmov rax, 1\t; syscall number for syswrite\n");
+      fprintf(prog, "\tmov rdi, 1\t; file descriptor for stdout\n");
+      fprintf(prog, "\tmov rdx, 1\t; the number of bytes to write to the console\n\n");
+      fprintf(prog, "\tmov rsi, rsp\t; move address of first character into the buffer register\n");
+      fprintf(prog, "\tadd rsp, 8\t; add 8 bytes to rsp register to simulate a pop\n");
+      fprintf(prog, "\tsyscall\t; syswrite syscall\n");
+      fprintf(prog, "\tdec rbx\t\t; decrement counter register\n");
+      fprintf(prog, "\tcmp rbx, 0\t; if rbx > 0, there are more bytes to print\n");
+      fprintf(prog, "\tjne print_result\t; loop back\n");
+
+      
+    }
+
   }
 }
