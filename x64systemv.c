@@ -3,6 +3,7 @@
 #include "string.h"
 
 int funcCodeSymbolIndex = 0;
+int funcCodePrintIndex = 0;
 
 void dataSectionHeader(FILE *prog, ParseTree *parseTree) {
   fprintf(prog, "section .data\n\n");
@@ -138,23 +139,22 @@ void funcCode(FILE *prog, ParseTree *parseTree, char symbolName[50][20], char sy
       printf("x64systemv.c: print called\n");
 
       funcCode(prog, unOpExpr->rint, symbolName, symbolType, symbolLocation, stackDepth, symbolTableIndex);
-      fprintf(prog, "printing:\n");
 
       fprintf(prog, "\tmov rcx, 10\t; set the divisor to 10\n");
       fprintf(prog, "\txor rbx, rbx\t; clear rbx to use as counter\n");
 
       // setup the divide loop
-      fprintf(prog, "divide_loop:\n");
+      fprintf(prog, "divide_loop%d:\n", funcCodePrintIndex);
       fprintf(prog, "\txor rdx, rdx\t; clear remainder\n");
       fprintf(prog, "\tdiv rcx\t\t; divide rax by 10, remainder in rdx\n");
       fprintf(prog, "\tadd rdx, '0'\t; convert integer to ascii\n");
       fprintf(prog, "\tpush rdx\t; push the remainder to the stack\n");
       fprintf(prog, "\tinc rbx\t\t; increment the number of pushes to the stack\n\n");
       fprintf(prog, "\tcmp rax, 0\t; check to make sure quotient is not 0\n");
-      fprintf(prog, "\tjne divide_loop\t; if != 0, continue loop\n");
+      fprintf(prog, "\tjne divide_loop%d\t; if != 0, continue loop\n", funcCodePrintIndex);
 
       // setup the print result loop
-      fprintf(prog, "print_result:\n");
+      fprintf(prog, "print_result%d:\n", funcCodePrintIndex);
       fprintf(prog, "; prepare the registers for syswrite\n");
       fprintf(prog, "\tmov rax, 1\t; syscall number for syswrite\n");
       fprintf(prog, "\tmov rdi, 1\t; file descriptor for stdout\n");
@@ -164,9 +164,10 @@ void funcCode(FILE *prog, ParseTree *parseTree, char symbolName[50][20], char sy
       fprintf(prog, "\tsyscall\t; syswrite syscall\n");
       fprintf(prog, "\tdec rbx\t\t; decrement counter register\n");
       fprintf(prog, "\tcmp rbx, 0\t; if rbx > 0, there are more bytes to print\n");
-      fprintf(prog, "\tjne print_result\t; loop back\n");
+      fprintf(prog, "\tjne print_result%d\t; loop back\n", funcCodePrintIndex);
 
-      
+      funcCodePrintIndex++;
+
     }
 
   }

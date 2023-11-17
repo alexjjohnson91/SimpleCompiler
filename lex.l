@@ -14,6 +14,7 @@
 "int"                   { yylval.string=strdup(yytext); return TOK_TYPE; }
 "main"                  { return TOK_IDENTIFIER; }
 "cout"                  { return TOK_COUT; }
+"endl"                  { return TOK_ENDL; }
 "{"                     { return TOK_LBRACE; }
 "}"                     { return TOK_RBRACE; }
 "("                     { return TOK_LPAREN; }
