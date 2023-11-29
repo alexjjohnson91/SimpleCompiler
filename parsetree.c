@@ -3,11 +3,12 @@
 #ifndef COMPILER_PARSETREE
 #define COMPILER_PARSETREE
 
-typedef enum { INT, STRING, BINOP, UNOP } ParseTreeType;
+typedef enum { INT, STRING, BINOP, UNOP, ERROR } ParseTreeType;
 typedef enum { ADDITION, SUBTRACTION, MULTIPLICATION, DIVIDE } ParseTreeBinOp;
+typedef enum { COUTERROR, ASSIGNERROR } ErrorOp;
 
 // new enum for Unary operator
-typedef enum { NEGATION, ASSIGN, PRINT } ParseTreeUnOp;
+typedef enum { NEGATION, ASSIGN, PRINTLN, PRINT } ParseTreeUnOp;
 // new enum end
 
 typedef struct parseTree ParseTree;
@@ -24,6 +25,11 @@ typedef struct UnOpExpr {
     ParseTree *rint;
 } UnOpExpr;
 
+typedef struct ErrorExpr {
+    ErrorOp ErrorOpType;
+    ParseTree *rint;
+} ErrorExpr;
+
 struct parseTree {
     ParseTreeType type;
     union {
@@ -31,6 +37,7 @@ struct parseTree {
         char* stringValue; // is this right?
         BinOpExpr *binExpr;
         UnOpExpr *unExpr;
+        ErrorExpr *errExpr;
     };
 };
 
@@ -114,6 +121,16 @@ ParseTree *assign(ParseTree *rint) {
     return parseTree;
 }
 
+ParseTree *println(ParseTree *rint) {
+    ParseTree *parseTree = malloc(sizeof(parseTree));
+    UnOpExpr *unOpExpr = malloc(sizeof(unOpExpr));
+    unOpExpr->UnOpType = PRINTLN;
+    unOpExpr->rint = rint;
+    parseTree->type = UNOP;
+    parseTree->unExpr = unOpExpr;
+    return parseTree;
+}
+
 ParseTree *print(ParseTree *rint) {
     ParseTree *parseTree = malloc(sizeof(parseTree));
     UnOpExpr *unOpExpr = malloc(sizeof(unOpExpr));
@@ -121,6 +138,28 @@ ParseTree *print(ParseTree *rint) {
     unOpExpr->rint = rint;
     parseTree->type = UNOP;
     parseTree->unExpr = unOpExpr;
+    return parseTree;
+}
+
+
+// functions for errors
+ParseTree *printError(ParseTree *rint) {
+    ParseTree *parseTree = malloc(sizeof(parseTree));
+    ErrorExpr *errorExpr = malloc(sizeof(errorExpr));
+    errorExpr->ErrorOpType = COUTERROR;
+    errorExpr->rint = rint;
+    parseTree->type = ERROR;
+    parseTree->errExpr = errorExpr;
+    return parseTree;
+}
+
+ParseTree *assignError(ParseTree *rint) {
+    ParseTree *parseTree = malloc(sizeof(parseTree));
+    ErrorExpr *errorExpr = malloc(sizeof(errorExpr));
+    errorExpr->ErrorOpType = ASSIGNERROR;
+    errorExpr->rint = rint;
+    parseTree->type = ERROR;
+    parseTree->errExpr = errorExpr;
     return parseTree;
 }
 

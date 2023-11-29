@@ -4,9 +4,12 @@
 
 int funcCodeSymbolIndex = 0;
 int funcCodePrintIndex = 0;
+int funcCodeErrorIndex = 0;
 
 void dataSectionHeader(FILE *prog, ParseTree *parseTree) {
   fprintf(prog, "section .data\n\n");
+  fprintf(prog, "\towl db '<(o.O)>', 0xa, 'Wan Shi Tong is watching for mistakes', 0xa, 0x0\n");
+  fprintf(prog, "\t\towlLen equ $ - owl\n");
 }
 
 void textSectionHeader(FILE *prog, ParseTree *parseTree) {
@@ -23,6 +26,7 @@ void funcPrologue(FILE *prog, int stackDepth) {
 
 void sysExit(FILE *prog) {
   fprintf(prog, "\n\tmov rax, 60\n");
+  fprintf(prog, "\txor rdi, rdi\n");
   fprintf(prog, "\tsyscall\n");
 }
 
@@ -135,13 +139,62 @@ void funcCode(FILE *prog, ParseTree *parseTree, char symbolName[50][20], char sy
       printf("x64systemv: stack depth %d\n", stackDepth);
       funcCodeSymbolIndex++;
     }
-    else if (unOpExpr->UnOpType == PRINT) {
+    else if (unOpExpr->UnOpType == PRINTLN) {
       printf("x64systemv.c: print called\n");
 
       funcCode(prog, unOpExpr->rint, symbolName, symbolType, symbolLocation, stackDepth, symbolTableIndex);
 
       fprintf(prog, "\tmov rcx, 10\t; set the divisor to 10\n");
       fprintf(prog, "\txor rbx, rbx\t; clear rbx to use as counter\n");
+      fprintf(prog, "\tpush 0xa\t\t; push new line character to the stack\n");
+
+      // setup the divide loop
+      fprintf(prog, "divide_loop%d:\n", funcCodePrintIndex);
+      fprintf(prog, "\txor rdx, rdx\t; clear remainder\n");
+      fprintf(prog, "\tdiv rcx\t\t; divide rax by 10, remainder in rdx\n");
+      fprintf(prog, "\tadd rdx, '0'\t; convert integer to ascii\n");
+      fprintf(prog, "\tpush rdx\t; push the remainder to the stack\n");
+      fprintf(prog, "\tinc rbx\t\t; increment the number of pushes to the stack\n\n");
+      fprintf(prog, "\tcmp rax, 0\t; check to make sure quotient is not 0\n");
+      fprintf(prog, "\tjne divide_loop%d\t; if != 0, continue loop\n", funcCodePrintIndex);
+
+      // setup the print result loop
+      fprintf(prog, "print_result%d:\n", funcCodePrintIndex);
+      fprintf(prog, "; prepare the registers for syswrite\n");
+      fprintf(prog, "\tmov rax, 1\t; syscall number for syswrite\n");
+      fprintf(prog, "\tmov rdi, 1\t; file descriptor for stdout\n");
+      fprintf(prog, "\tmov rdx, 1\t; the number of bytes to write to the console\n\n");
+      fprintf(prog, "\tmov rsi, rsp\t; move address of first character into the buffer register\n");
+      fprintf(prog, "\tadd rsp, 8\t; add 8 bytes to rsp register to simulate a pop\n");
+      fprintf(prog, "\tsyscall\t; syswrite syscall\n");
+      fprintf(prog, "\tdec rbx\t\t; decrement counter register\n");
+      fprintf(prog, "\tcmp rbx, 0\t; if rbx > 0, there are more bytes to print\n");
+      fprintf(prog, "\tjne print_result%d\t; loop back\n", funcCodePrintIndex);
+
+      
+      // printing the new line in assembly
+      fprintf(prog, "\tmov rsi, rsp\t; add the new line character to be printed\n");
+      fprintf(prog, "\tadd rsp, 8\t; simulate a pop\n");
+      fprintf(prog, "\tsyscall\t; print the new line\n");
+
+      funcCodePrintIndex++;
+
+    }
+    else if (unOpExpr->UnOpType == PRINT) {
+      printf("\n\n\nAre you sure you don't want to print a new line???\n\n\n");
+
+      funcCode(prog, unOpExpr->rint, symbolName, symbolType, symbolLocation, stackDepth, symbolTableIndex);
+
+      fprintf(prog, "error%d: \n", funcCodeErrorIndex++);
+      fprintf(prog, "\tmov rax, 1\t; syswrite\n");
+      fprintf(prog, "\tmov rsi, owl\t; move address to rsi\n");
+      fprintf(prog, "\tmov rdi, 1\t; file descriptor for stdout\n");
+      fprintf(prog, "\tmov rdx, owlLen\t; move the string length to rdx\n");
+      fprintf(prog, "\tsyscall\t; print the error message\n");
+
+      fprintf(prog, "\tmov rcx, 10\t; set the divisor to 10\n");
+      fprintf(prog, "\txor rbx, rbx\t; clear out rbx to use as the counter\n");
+      
 
       // setup the divide loop
       fprintf(prog, "divide_loop%d:\n", funcCodePrintIndex);
@@ -168,7 +221,37 @@ void funcCode(FILE *prog, ParseTree *parseTree, char symbolName[50][20], char sy
 
       funcCodePrintIndex++;
 
+    } 
+  } else if (parseTree->type == ERROR) {
+    ErrorExpr *errExpr = parseTree->errExpr;
+    
+    if (errExpr->ErrorOpType == COUTERROR) {
+      printf("\n\n\nERROR: There is something missing\n\n\n");
+
+      fprintf(prog, "error%d: \n", funcCodeErrorIndex++);
+      fprintf(prog, "\tmov rax, 1\t; syswrite\n");
+      fprintf(prog, "\tmov rsi, owl\t; move address to rsi\n");
+      fprintf(prog, "\tmov rdi, 1\t; file descriptor for stdout\n");
+      fprintf(prog, "\tmov rdx, owlLen\t; move the string length to rdx\n");
+      fprintf(prog, "\tsyscall\t; print the error message\n");
+
+      funcCode(prog, println(errExpr->rint), symbolName, symbolType, symbolLocation, stackDepth, symbolTableIndex);
+
     }
+    else if (errExpr->ErrorOpType == ASSIGNERROR) {
+      printf("\n\n\nERROR: There is something missing\n\n\n");
+
+      fprintf(prog, "error%d: \n", funcCodeErrorIndex++);
+      fprintf(prog, "\tmov rax, 1\t; syswrite\n");
+      fprintf(prog, "\tmov rsi, owl\t; move address to rsi\n");
+      fprintf(prog, "\tmov rdi, 1\t; file descriptor for stdout\n");
+      fprintf(prog, "\tmov rdx, owlLen\t; move the string length to rdx\n");
+      fprintf(prog, "\tsyscall\t; print the error message\n");
+
+      funcCode(prog, assign(errExpr->rint), symbolName, symbolType, symbolLocation, stackDepth, symbolTableIndex);
+
+    }
+
 
   }
 }

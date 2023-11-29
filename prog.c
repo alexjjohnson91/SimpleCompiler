@@ -1,7 +1,7 @@
 int main() {
-    int x = 61;
-    int y = 12;
+    int x = 7;
+    int y = 91;
+    
 
-    cout << x - y;
-    cout << x + y;
+    cout << y + x << endl;
 }

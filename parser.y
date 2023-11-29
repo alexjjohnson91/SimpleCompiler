@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 
 %token TOK_LBRACE TOK_COUT TOK_STREAMOUTPUT
 %token TOK_RBRACE TOK_RETURN TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_NEG
-%token TOK_LPAREN TOK_RPAREN TOK_SEMI TOK_LETTER TOK_EQUALS
+%token TOK_LPAREN TOK_RPAREN TOK_SEMI TOK_LETTER TOK_EQUALS TOK_ENDL
 
 %union
 {
@@ -135,12 +135,34 @@ stmt:
         printf("\t\tparser.y: proxy incremented to %d\n", symbolTableProxy);
     }
     |
+    TOK_TYPE TOK_IDENTIFIER TOK_EQUALS expr
+    {
+        insertSymbol((char*)$1, (char*)$2, symbolTableProxy);
+        ParseTree *rint = parserStackPop(parserStack);
+        parserStackPush(parserStack, assignError(rint));
+        symbolTableProxy++;
+    }
+    |
+    TOK_COUT TOK_STREAMOUTPUT expr TOK_STREAMOUTPUT TOK_ENDL TOK_SEMI
+    {
+        ParseTree *rint = parserStackPop(parserStack);
+        parserStackPush(parserStack, println(rint));
+        symbolTableProxy++;
+
+    }
+    |
+    TOK_COUT TOK_STREAMOUTPUT expr TOK_STREAMOUTPUT TOK_ENDL
+    {
+        ParseTree *rint = parserStackPop(parserStack);
+        parserStackPush(parserStack, printError(rint));
+        symbolTableProxy++;
+    }
+    |
     TOK_COUT TOK_STREAMOUTPUT expr TOK_SEMI
     {
         ParseTree *rint = parserStackPop(parserStack);
         parserStackPush(parserStack, print(rint));
         symbolTableProxy++;
-
     }
     |
     TOK_LBRACE stmt_list TOK_RBRACE
